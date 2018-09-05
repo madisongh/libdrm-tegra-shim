@@ -21,6 +21,6 @@ pkgconfig_DATA = libdrm.pc
 
 lib_LTLIBRARIES = libdrm.la
 libdrm_la_CFLAGS = -I=${includedir}/drm
-libdrm_la_LDFLAGS = -version-number 2:4:0 -no-undefined
+libdrm_la_LDFLAGS = -version-number 2:4:0 -no-undefined -ldl
 libdrm_la_SOURCES = libdrm-shim.c
 
