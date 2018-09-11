@@ -129,6 +129,8 @@ typedef struct _drmEventContext {
  * and are not the full set of definitions.
  */
 #define DRM_BUS_PCI       0
+#define DRM_BUS_PLATFORM  2
+#define DRM_BUS_HOST1X    3
 
 #define DRM_NODE_RENDER  2
 
@@ -141,6 +143,18 @@ typedef struct _drmPciBusInfo {
     uint8_t dev;
     uint8_t func;
 } drmPciBusInfo, *drmPciBusInfoPtr;
+
+#define DRM_PLATFORM_DEVICE_NAME_LEN 512
+
+typedef struct _drmPlatformBusInfo {
+    char fullname[DRM_PLATFORM_DEVICE_NAME_LEN];
+} drmPlatformBusInfo, *drmPlatformBusInfoPtr;
+
+#define DRM_HOST1X_DEVICE_NAME_LEN 512
+
+typedef struct _drmHost1xBusInfo {
+    char fullname[DRM_HOST1X_DEVICE_NAME_LEN];
+} drmHost1xBusInfo, *drmHost1xBusInfoPtr;
 
 typedef struct _drmPciDeviceInfo {
     uint16_t vendor_id;
@@ -156,6 +170,8 @@ typedef struct _drmDevice {
     int bustype;
     union {
         drmPciBusInfoPtr pci;
+        drmPlatformBusInfoPtr platform;
+        drmHost1xBusInfoPtr host1x;
     } businfo;
     union {
         drmPciDeviceInfoPtr pci;
@@ -171,6 +187,7 @@ static inline __attribute__((unused)) int drmGetDevice2(int fd, uint32_t flags, 
 static inline __attribute__((unused)) int drmGetDevices2(uint32_t flags, drmDevicePtr devices[], int max_devices) { return -EINVAL; }
 static inline __attribute__((unused)) void drmFreeDevice(drmDevicePtr *device) { return; }
 static inline __attribute__((unused)) void drmFreeDevices(drmDevicePtr devices[], int max_devices) { return; }
+static inline __attribute__((unused)) char *drmGetDeviceNameFromFd2(int fd) { return 0; }
 static inline __attribute__((unused)) int drmOpenOnce(void *unused, const char *BusID, int *newlyopened) { return -1; }
 static inline __attribute__((unused)) void drmCloseOnce(int fd) { return; }
 static inline __attribute__((unused)) int drmMap(int fd, drm_handle_t handle, drmSize size, drmAddressPtr address) { return -EINVAL; }
