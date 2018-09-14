@@ -34,6 +34,19 @@ extern "C" {
 #endif
 
 #include <drm.h>
+#include <errno.h>
+
+/*
+ * Hacks for weston 5 compilation
+ */
+static inline __attribute__((unused)) int drmModeAddFB2WithModifiers(int fd, uint32_t width, uint32_t height,
+								     uint32_t pixel_format, const uint32_t bo_handles[4],
+								     const uint32_t pitches[4], const uint32_t offsets[4],
+								     const uint64_t modifier[4], uint32_t *buf_id,
+								     uint32_t flags) { return -EINVAL; }
+/*
+ * end of weston hacks
+ */
 
 /*
  * Feature defines
