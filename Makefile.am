@@ -16,7 +16,7 @@ includedir = $(exec_prefix)/include
 klibdrmincludedir = ${includedir}/libdrm
 
 include_HEADERS = xf86drm.h xf86drmMode.h
-klibdrminclude_HEADERS = nouveau_drm.h
+klibdrminclude_HEADERS = nouveau_drm.h tegra_drm.h
 pkgconfig_DATA = libdrm.pc
 
 lib_LTLIBRARIES = libdrm.la

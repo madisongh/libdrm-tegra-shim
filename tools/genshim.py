@@ -17,7 +17,9 @@ def strip_args(args):
     arglist = args[0:len(args)-1].split(',')
     strippedlist = []
     for arg in arglist:
-        if '*' in arg:
+        if '**' in arg:
+            strippedlist.append(arg.split('**')[1])
+        elif '*' in arg:
             strippedlist.append(arg.split('*')[1])
         else:
             awords = arg.strip().split(' ')

@@ -33,7 +33,9 @@
 extern "C" {
 #endif
 
+#include <sys/types.h>
 #include <stdint.h>
+#include <stdarg.h>
 #include "drm.h"
 #include "tegra_drm.h"
 
@@ -87,6 +89,53 @@ typedef struct _drmSetVersion {
 	int drm_dd_major;
 	int drm_dd_minor;
 } drmSetVersion, *drmSetVersionPtr;
+
+typedef enum {
+    DRM_FRAME_BUFFER    = 0,      /**< WC, no caching, no core dump */
+    DRM_REGISTERS       = 1,      /**< no caching, no core dump */
+    DRM_SHM             = 2,      /**< shared, cached */
+    DRM_AGP             = 3,	  /**< AGP/GART */
+    DRM_SCATTER_GATHER  = 4,	  /**< PCI scatter/gather */
+    DRM_CONSISTENT      = 5	  /**< PCI consistent */
+} drmMapType;
+
+typedef enum {
+    DRM_RESTRICTED      = 0x0001, /**< Cannot be mapped to client-virtual */
+    DRM_READ_ONLY       = 0x0002, /**< Read-only in client-virtual */
+    DRM_LOCKED          = 0x0004, /**< Physical pages locked */
+    DRM_KERNEL          = 0x0008, /**< Kernel requires access */
+    DRM_WRITE_COMBINING = 0x0010, /**< Use write-combining, if available */
+    DRM_CONTAINS_LOCK   = 0x0020, /**< SHM page that contains lock */
+    DRM_REMOVABLE	= 0x0040  /**< Removable mapping */
+} drmMapFlags;
+
+typedef enum {
+    DRM_LOCK_READY      = 0x01, /**< Wait until hardware is ready for DMA */
+    DRM_LOCK_QUIESCENT  = 0x02, /**< Wait until hardware quiescent */
+    DRM_LOCK_FLUSH      = 0x04, /**< Flush this context's DMA queue first */
+    DRM_LOCK_FLUSH_ALL  = 0x08, /**< Flush all DMA queues first */
+				/* These *HALT* flags aren't supported yet
+                                   -- they will be used to support the
+                                   full-screen DGA-like mode. */
+    DRM_HALT_ALL_QUEUES = 0x10, /**< Halt all current and future queues */
+    DRM_HALT_CUR_QUEUES = 0x20  /**< Halt all current queues */
+} drmLockFlags;
+
+typedef struct _drmLock {
+    volatile unsigned int lock;
+    char                      padding[60];
+    /* This is big enough for most current (and future?) architectures:
+       DEC Alpha:              32 bytes
+       Intel Merced:           ?
+       Intel P5/PPro/PII/PIII: 32 bytes
+       Intel StrongARM:        32 bytes
+       Intel i386/i486:        16 bytes
+       MIPS:                   32 bytes (?)
+       Motorola 68k:           16 bytes
+       Motorola PowerPC:       32 bytes
+       Sun SPARC:              32 bytes
+    */
+} drmLock, *drmLockPtr;
 
 #define DRM_EVENT_CONTEXT_VERSION 4
 
@@ -178,9 +227,32 @@ typedef struct _drmDevice {
     } deviceinfo;
 } drmDevice, *drmDevicePtr;
 
-typedef unsigned int drmLock, *drmLockPtr; // actual definition is a structure, but we don't care
 typedef unsigned int  drmSize,     *drmSizePtr;
 typedef void          *drmAddress, **drmAddressPtr;
+
+#if (__GNUC__ >= 3)
+#define DRM_PRINTFLIKE(f, a) __attribute__ ((format(__printf__, f, a)))
+#else
+#define DRM_PRINTFLIKE(f, a)
+#endif
+
+typedef struct _drmServerInfo {
+  int (*debug_print)(const char *format, va_list ap) DRM_PRINTFLIKE(1,0);
+  int (*load_module)(const char *name);
+  void (*get_perms)(gid_t *, mode_t *);
+} drmServerInfo, *drmServerInfoPtr;
+
+typedef struct drmHashEntry {
+    int      fd;
+    void     (*f)(int, void *, void *);
+    void     *tagTable;
+} drmHashEntry;
+
+typedef enum {
+    DRM_CONTEXT_PRESERVED = 0x01, /**< This context is preserved and
+				     never swapped. */
+    DRM_CONTEXT_2DONLY    = 0x02  /**< This context is for 2D rendering only. */
+} drm_context_tFlags, *drm_context_tFlagsPtr;
 
 #include <errno.h>
 static inline __attribute__((unused)) int drmGetDevice2(int fd, uint32_t flags, drmDevicePtr *device) { return -EINVAL; }
@@ -190,8 +262,6 @@ static inline __attribute__((unused)) void drmFreeDevices(drmDevicePtr devices[]
 static inline __attribute__((unused)) char *drmGetDeviceNameFromFd2(int fd) { return 0; }
 static inline __attribute__((unused)) int drmOpenOnce(void *unused, const char *BusID, int *newlyopened) { return -1; }
 static inline __attribute__((unused)) void drmCloseOnce(int fd) { return; }
-static inline __attribute__((unused)) int drmMap(int fd, drm_handle_t handle, drmSize size, drmAddressPtr address) { return -EINVAL; }
-static inline __attribute__((unused)) int drmUnmap(drmAddress address, drmSize size) { return 0; }
 static inline __attribute__((unused)) int drmGetNodeTypeFromFd(int fd) { return -1; }
 
 
@@ -199,6 +269,9 @@ static inline __attribute__((unused)) int drmGetNodeTypeFromFd(int fd) { return 
  * end of mesa compilation hacks
  */
 
+void* drmGetHashTable(void);
+drmHashEntry* drmGetEntry(int fd);
+int drmAvailable(void);
 int drmOpen (const char *name, const char *busid);
 int drmClose (int fd);
 int drmGetCap (int fd, uint64_t capability, uint64_t *value);
@@ -212,14 +285,35 @@ void drmFreeVersion (drmVersionPtr version);
 int drmHandleEvent (int fd, drmEventContextPtr evctx);
 int drmIoctl (int fd, unsigned long request, void *arg);
 int drmWaitVBlank (int fd, drmVBlankPtr vbl);
+void drmSetServerInfo(drmServerInfoPtr info);
 int drmPrimeFDToHandle (int fd, int prime_fd, uint32_t *handle);
 int drmPrimeHandleToFD (int fd, uint32_t handle, uint32_t flags, int *prime_fd);
 int drmSetInterfaceVersion (int fd, drmSetVersion *version);
 char* drmGetBusid (int fd);
+int drmSetBusid(int fd, const char *busid);
 void drmFreeBusid (const char *busid);
+int drmAddMap(int fd, drm_handle_t offset, drmSize size, drmMapType type, drmMapFlags flags, drm_handle_t * handle);
+int drmRmMap(int fd, drm_handle_t handle);
+int drmMap(int fd, drm_handle_t handle, drmSize size, drmAddressPtr address);
+int drmUnmap(drmAddress address, drmSize size);
+int drmGetLock(int fd, drm_context_t context, drmLockFlags flags);
+int drmUnlock(int fd, drm_context_t context);
 char* drmGetDeviceNameFromFd (int fd);
 void drmFree (void *p);
+int drmHashFirst(void *t, unsigned long *key, void **value);
+int drmHashNext(void *t, unsigned long *key, void **value);
 int drmCommandWriteRead (int fd, unsigned long drmCommandIndex, void *data, unsigned long size);
+int drmCreateContext(int fd, drm_context_t * handle);
+int drmSetContextFlags(int fd, drm_context_t context, drm_context_tFlags flags);
+int drmAddContextTag(int fd, drm_context_t context, void *tag);
+int drmDelContextTag(int fd, drm_context_t context);
+void* drmGetContextTag(int fd, drm_context_t context);
+drm_context_t* drmGetReservedContextList(int fd, int *count);
+void drmFreeReservedContextList(drm_context_t *handle);
+int drmDestroyContext(int fd, drm_context_t handle);
+int drmCreateDrawable(int fd, drm_drawable_t * handle);
+int drmDestroyDrawable(int fd, drm_drawable_t handle);
+int drmUpdateDrawableInfo(int fd, drm_drawable_t handle, drm_drawable_info_type_t type, unsigned int num, void *data);
 
 #if defined(__cplusplus)
 }
