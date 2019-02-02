@@ -1,6 +1,6 @@
 # drm-shim makefile
 #
-# Copyright (c) 2018, Matthew Madison
+# Copyright (c) 2018, 2019 Matthew Madison
 #
 
 AUTOMAKE_OPTIONS = subdir-objects foreign
@@ -15,7 +15,7 @@ pkgconfigdir=@pkgconfigdir@
 includedir = $(exec_prefix)/include
 klibdrmincludedir = ${includedir}/libdrm
 
-include_HEADERS = xf86drm.h xf86drmMode.h
+include_HEADERS = xf86drm.h xf86drmMode.h libsync.h
 klibdrminclude_HEADERS = nouveau_drm.h tegra_drm.h
 pkgconfig_DATA = libdrm.pc
 
