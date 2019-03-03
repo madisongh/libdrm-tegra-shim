@@ -181,6 +181,7 @@ typedef struct _drmEventContext {
 #define DRM_BUS_PLATFORM  2
 #define DRM_BUS_HOST1X    3
 
+#define DRM_NODE_PRIMARY 0
 #define DRM_NODE_RENDER  2
 
 #define DRM_DIR_NAME "/dev"
