@@ -1,10 +1,10 @@
 dnl
 dnl configure.ac - autoconf script for drm-shim
 dnl
-AC_INIT([drm-shim], [2.4.96])
+AC_INIT([drm-shim], [2.4.97])
 AM_INIT_AUTOMAKE([subdir-objects foreign])
 AM_SILENT_RULES([yes])
-AC_COPYRIGHT([Copyright (c) 2018, Matthew Madison])
+AC_COPYRIGHT([Copyright (c) 2018-2019, Matthew Madison])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_PREREQ([2.69])
