@@ -264,7 +264,7 @@ static inline __attribute__((unused)) char *drmGetDeviceNameFromFd2(int fd) { re
 static inline __attribute__((unused)) int drmOpenOnce(void *unused, const char *BusID, int *newlyopened) { return -1; }
 static inline __attribute__((unused)) void drmCloseOnce(int fd) { return; }
 static inline __attribute__((unused)) int drmGetNodeTypeFromFd(int fd) { return -1; }
-
+static inline __attribute__((unused)) int drmDevicesEqual(drmDevicePtr a, drmDevicePtr b) { return 0; }
 
 /*
  * end of mesa compilation hacks
