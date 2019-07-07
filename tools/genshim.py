@@ -9,7 +9,7 @@ from __future__ import print_function
 import re
 import sys
 
-fpat = re.compile(r'^([^ ]+) +([^ ]+) *(\(.*\));')
+fpat = re.compile(r'^extern +([^ ]+) +([^ ]+) *(\(.*\));')
 
 def strip_args(args):
     if args == '(void)' or args == '()':
@@ -36,6 +36,9 @@ with open(sys.argv[1], 'r') as f:
             continue
         functype = m.group(1)
         funcname = m.group(2)
+        if funcname.startswith('*'):
+            functype = functype + ' *'
+            funcname = funcname[1:]
         funcargs = m.group(3)
         if functype == 'void':
             retfunc = 'return'
